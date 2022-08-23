@@ -1,3 +1,4 @@
+# TODO
 from scipy import signal
 from statsmodels.nonparametric import smoothers_lowess
 
@@ -34,3 +35,8 @@ def ewm(df, cols):
         new_col = 'smooth_' + col
         df[new_col] = df[col].ewm(alpha=0.05).mean().astype('int64')
     return df
+
+# Performed as part of training pipeline:
+# print('[INFO] Smoothing')
+# df = ewm(df, lowpass_cols)
+# df = filter_signals(df, lowpass_cols)
