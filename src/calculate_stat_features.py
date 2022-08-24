@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from sklearn import metrics
+from utils import auc_group, sum_abs_diffs
 
 
 def calculate_statistical_features(grouped_data):
@@ -30,14 +30,3 @@ def calculate_statistical_features(grouped_data):
     stat_features = stat_features.join(sum_diffs)
 
     return stat_features
-
-
-def auc_group(data=None, x=None, y=None):
-    if x is None:
-        x = data.index.astype('int64')
-        y = data.values
-    return metrics.auc(x, y)
-
-
-def sum_abs_diffs(x):
-    return np.sum(np.abs(np.diff(x)))

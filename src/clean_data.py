@@ -1,13 +1,13 @@
 import os
 import re
 import glob
-import logging
 import utils
 
 import pandas as pd
 import numpy as np
 
-from config import TIME_INDEX, TIME_INTERVAL, FS, SAMPLE_PERIOD
+from config import TIME_INDEX, TIME_INTERVAL, FS, SAMPLE_PERIOD, MAX_FEELTRACE
+from tqdm import tqdm
 
 INPUT_PICKLE_FILE = True
 INPUT_DIR = 'COMBINED_DATA'
@@ -16,6 +16,17 @@ INPUT_PICKLE_NAME = 'subject_data.pk'
 SAVE_PICKLE_FILE = True
 OUTPUT_DIR = 'COMBINED_DATA'
 OUTPUT_PICKLE_NAME = 'merged_fsr_data.pk'
+
+FILE_ORDER = [
+    'fsr.csv',
+    'joystick.csv',
+    'calibrated_words.csv',
+    'events_game_controlled_sound.csv',
+    'events_game_controlled_visual.csv',
+    'events_player_controlled.csv',
+    'interview.csv',
+    'scenes.csv'
+]
 
 
 def calculate_scene_restart_index(df, is_death_index):
@@ -113,15 +124,16 @@ def create_keystroke_flags(df):
 
     return df
 
-def parse_data(subject_data: dict):
+
+def parse_data(subject_data: dict, file_order=FILE_ORDER):
     merged_data = {}
     cols = ['timestamps', 'a0', 'a1', 'a2', 'a3', 'a4',
             'scene', 'feeltrace', 'calibrated_values']
     lowpass_cols = ['a0', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'feeltrace']
     order = {v: i for i, v in enumerate(file_order)}
-    
+
     for pnum in subject_data.keys():
-        logging.info(f'Parsing data for {pnum}')
+        utils.logger.info(f'Parsing data for {pnum}')
 
         subject_data[pnum].sort(key=lambda x: order[x['filename']])
 
@@ -132,34 +144,34 @@ def parse_data(subject_data: dict):
         for subject in tqdm(subject_data_iter):
             subject_df = subject['df']
             df = pd.merge_ordered(df, subject_df, on='timestamps', suffixes=(
-                None, '_'+subject['filename'].split('.')[0]))
+                None, '_' + subject['filename'].split('.')[0]))
         df['pnum'] = pnum
 
-        logging.info('Sorting DataFrame')
+        utils.logger.info('Sorting DataFrame')
         df.sort_values(by='timestamps', inplace=True)
         df.reset_index(inplace=True, drop=True)
 
-        logging.info('Filling NaNs')
+        utils.logger.info('Filling NaNs')
         df[cols] = df[cols].bfill().ffill()
         df = df[~df.timestamps.duplicated()]
         df = fix_nan_values(df)
 
-        logging.info('Creating combined keypress keys')
+        utils.logger.info('Creating combined keypress keys')
         fsr_cols = list(map(lambda x: 'a' + str(x), range(5)))
         df['a5'] = np.sum(df[fsr_cols], axis=1)
         df['a6'] = np.max(df[fsr_cols], axis=1)
 
-        logging.info('Fix sampling to {FS}Hz')
+        utils.logger.info('Fix sampling to {FS}Hz')
         df['timedelta'] = pd.TimedeltaIndex(df.timestamps, unit='ms')
         df = df.set_index('timedelta').resample(SAMPLE_PERIOD).nearest()
         df.reset_index(inplace=True, drop=False)
         df['timestamps'] = df.timedelta.astype('int64') / 1e9
-    
-        logging.info('Scaling feeltrace to 0-1 range')
+
+        utils.logger.info('Scaling feeltrace to 0-1 range')
         df.loc[:, df.columns.str.contains(
             'feeltrace')] = df.loc[:, df.columns.str.contains('feeltrace')] / MAX_FEELTRACE
 
-        logging.info('Creating keystroke flags')
+        utils.logger.info('Creating keystroke flags')
         df = create_keystroke_flags(df)
 
         merged_data[pnum] = df
@@ -170,11 +182,11 @@ def parse_data(subject_data: dict):
 if __name__ == "__main__":
     if INPUT_PICKLE_FILE:
         input_pickle_file_path = os.path.join(INPUT_DIR, INPUT_PICKLE_NAME)
-        subject_data = utils.load_pickle(file_path=input_pickle_file_path)
-    
+        subject_data = utils.load_pickle(input_pickle_file_path)
 
     merged_fsr_data = parse_data(subject_data)
-    
+
     if SAVE_PICKLE_FILE:
         output_pickle_file_path = os.path.join(OUTPUT_DIR, OUTPUT_PICKLE_NAME)
-        utils.pickle_data(data=merged_fsr_data, file_path=output_pickle_file_path)
+        utils.pickle_data(data=merged_fsr_data,
+                          file_path=output_pickle_file_path)

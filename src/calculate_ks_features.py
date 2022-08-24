@@ -1,6 +1,11 @@
 import pandas as pd
+import numpy as np
+
+from scipy import signal
+from scipy.fft import fftshift
 
 from config import TIME_INDEX, TIME_INTERVAL
+from utils import auc_group, sum_abs_diffs
 
 
 def calculate_keystroke_features_per_key(df, key='a1'):
@@ -25,7 +30,7 @@ def calculate_keystroke_features_per_key(df, key='a1'):
                     key + '_keystroke_time_to_peak',
                     key + '_keystroke_peak_to_release',
                     ]
-                    
+
     df[key + '_keystroke_duration'] = 0
     df[key + '_keystroke_peak_count'] = 0
     df[key + '_keystroke_max_peak'] = 0

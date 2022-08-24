@@ -12,15 +12,15 @@ MODELS = {
     'AdaBoostClassifier': AdaBoostClassifier(),
     'GradientBoostingClassifier': GradientBoostingClassifier(),
     'XGBClassifier': XGBClassifier(),
-    'SVC': SVC() # takes a long time to train with linear kernels
+    'SVC': SVC()  # takes a long time to train with linear kernels
 }
 
 PARAMS = {
-    'ExtraTreesClassifier': { 'n_estimators': [16, 32] },
-    'RandomForestClassifier': { 'n_estimators': [16, 32] },
-    'AdaBoostClassifier':  { 'n_estimators': [16, 32] },
-    'GradientBoostingClassifier': { 'n_estimators': [16, 32], 'learning_rate': [0.8, 1.0] },
-    'XGBClassifier': { 'max_depth': (4, 6, 8), 'min_child_weight': (1, 5, 10) },
+    'ExtraTreesClassifier': {'n_estimators': [16, 32]},
+    'RandomForestClassifier': {'n_estimators': [16, 32]},
+    'AdaBoostClassifier':  {'n_estimators': [16, 32]},
+    'GradientBoostingClassifier': {'n_estimators': [16, 32], 'learning_rate': [0.8, 1.0]},
+    'XGBClassifier': {'max_depth': (4, 6, 8), 'min_child_weight': (1, 5, 10)},
     'SVC': [
         {'kernel': ['linear'], 'C': [1, 10]},
         {'kernel': ['rbf'], 'C': [1, 10], 'gamma': [0.001, 0.0001]},
